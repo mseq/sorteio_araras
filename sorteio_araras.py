@@ -8,18 +8,19 @@ from datetime import datetime, timedelta
 ANO = 2025
 FERIADOS = {
     "feriados_nacionais": [
-        { "data_inicio": "2025-01-01", "data_fim": "2025-01-01", "nome": "Confraternização Universal" },
-        { "data_inicio": "2025-03-03", "data_fim": "2025-03-04", "nome": "Carnaval" },
-        { "data_inicio": "2025-04-18", "data_fim": "2025-04-18", "nome": "Paixão de Cristo" },
-        { "data_inicio": "2025-04-21", "data_fim": "2025-04-21", "nome": "Tiradentes" },
+        # { "data_inicio": "2025-01-01", "data_fim": "2025-01-01", "nome": "Confraternização Universal", "familia": "Maria" },
+        { "data_inicio": "2025-03-03", "data_fim": "2025-03-04", "nome": "Carnaval", "familia": "Carlos" },
+        { "data_inicio": "2025-04-18", "data_fim": "2025-04-21", "nome": "Paixão de Cristo / Tiradentes", "familia": "Maria" },
+        # { "data_inicio": "2025-04-21", "data_fim": "2025-04-21", "nome": "Tiradentes" },
         { "data_inicio": "2025-05-01", "data_fim": "2025-05-01", "nome": "Dia do Trabalho" },
-        { "data_inicio": "2025-06-19", "data_fim": "2025-06-19", "nome": "Corpus Christi" },
+        { "data_inicio": "2025-06-19", "data_fim": "2025-06-19", "nome": "Corpus Christi", "familia": "Suely" },
         # { "data_inicio": "2025-09-07", "data_fim": "2025-09-07", "nome": "Independência do Brasil" }, # Domingo
         # { "data_inicio": "2025-10-12", "data_fim": "2025-10-12", "nome": "Nossa Senhora Aparecida" }, # Domingo
         # { "data_inicio": "2025-11-02", "data_fim": "2025-11-02", "nome": "Finados" }, # Domingo
         # { "data_inicio": "2025-11-15", "data_fim": "2025-11-15", "nome": "Proclamação da República" }, # Sábado
         { "data_inicio": "2025-11-20", "data_fim": "2025-11-20", "nome": "Dia Nacional de Zumbi e da Consciência Negra" },
-        { "data_inicio": "2025-12-25", "data_fim": "2025-12-25", "nome": "Natal" }
+        { "data_inicio": "2025-12-25", "data_fim": "2025-12-25", "nome": "Natal" },
+        { "data_inicio": "2025-12-31", "data_fim": "2026-01-01", "nome": "Ano Novo", "familia": "Madalena" }
     ],
     "feriados_regionais": [
         { "data_inicio": "2025-01-20", "data_fim": "2025-01-20", "nome": "Dia de São Sebastião" },
@@ -120,9 +121,39 @@ def main():
     # list_sorteio_fds é a lista que armazena os sorteios dos fins de semana
     list_sorteio_fds = []
 
+    # Começamos pelos feriados, que já tem famílias associadas
+    for feriado in list_feriados:
+        if "familia" in feriado:
+            day = get_fds_mais_proximo(feriado)
+            list_sorteio_fds.append(
+                {
+                    "feriado": True,
+                    "nome_feriado": feriado["nome"],
+                    "dia_da_semana_inicio": datetime.strptime(feriado["data_inicio"], "%Y-%m-%d").strftime("%A"),
+                    "dia_da_semana_fim": datetime.strptime(feriado["data_fim"], "%Y-%m-%d").strftime("%A"),
+                    "familia": feriado["familia"],
+                    "fim_de_semana": datetime.strftime(day, "%Y-%m-%d"),
+                    "semana_ano": datetime.strftime(day, "%W")
+                }
+            )
+
+    sorted_list = sorted(list_sorteio_fds, key=lambda x: x["fim_de_semana"])
+    df = pd.DataFrame(sorted_list)
+
+    print("Feriados fixos:")
+    print(tabulate.tabulate(df, headers='keys', tablefmt='psql'))
+
+    print("\nTotais:")
+    df_summary = df.groupby(["familia"]).size().reset_index(name="qtd_feriados")
+    print(tabulate.tabulate(df_summary, headers='keys', tablefmt='psql'))
+    print("\n")
+
+
     # Começamos o sorteio sorteando os feriados, e então associado às famílias, travando os finsd e semana
     last_familia = None
     for feriado in list_feriados:
+        if "familia" in feriado:
+            continue
 
         if len(list_familias) == 0:
             list_familias = FAMILIAS.copy()
@@ -151,7 +182,7 @@ def main():
             }
         )
 
-    sorted_list = sorted(list_sorteio_fds, key=lambda x: x["semana_ano"])
+    sorted_list = sorted(list_sorteio_fds, key=lambda x: x["fim_de_semana"])
     df = pd.DataFrame(sorted_list)
 
     print("Feriados sorteados:")
@@ -205,7 +236,7 @@ def main():
         day += timedelta(days=1)
 
     # Por fim, mostramos no console o resultado do sorteio
-    sorted_list = sorted(list_sorteio_fds, key=lambda x: x["semana_ano"])
+    sorted_list = sorted(list_sorteio_fds, key=lambda x: x["fim_de_semana"])
     
     df = pd.DataFrame(sorted_list)
 
