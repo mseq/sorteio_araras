@@ -247,5 +247,8 @@ def main():
     df_summary = df.groupby(["familia"]).size().reset_index(name="qtd_fds")
     print(tabulate.tabulate(df_summary, headers='keys', tablefmt='psql'))
 
+    # Gera .CSV com os resultados, para distribuição às famílias
+    df.to_csv(f"sorteio_araras-{str(ANO)}.csv", index=False)
+
 if __name__ == "__main__":
     main()
